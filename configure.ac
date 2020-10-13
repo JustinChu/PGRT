@@ -1,0 +1,52 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ(2.59)
+AC_INIT(PGRT, 0.1 , cjustin@ds.dfci.harvard.edu)
+AM_INIT_AUTOMAKE
+#AC_CONFIG_SRCDIR([BioBloomMaker/BioBloomMaker.cpp])
+AC_CONFIG_HEADER([config.h])
+
+#see http://stackoverflow.com/questions/8215785/how-can-i-use-ac-revision-with-git
+AC_REVISION([m4_esyscmd([./tools/configure.commit])])
+AC_DEFINE([GIT_REVISION], "[m4_esyscmd([./tools/configure.commit])]", [git revision information])
+
+AC_PROG_RANLIB
+
+# Checks for programs.
+AC_PROG_CXX
+
+# Checks for libraries.
+AC_CHECK_LIB([dl], [dlopen])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_TYPE_SIZE_T
+
+# Set compiler flags
+AC_SUBST(CXXFLAGS,"-std=c++11 $CXXFLAGS")
+AC_SUBST(AM_CXXFLAGS, "-Wall -Wextra -Werror $AM_CXXFLAGS")
+
+# Find the absolute paths.
+srcdir=$(cd $srcdir; pwd)
+
+# Set compiler flags.
+#AC_SUBST(CPPFLAGS,"-I$srcdir $boost_cppflags $sparsehash_cppflags $sdsl_cppflags $CPPFLAGS")
+#AC_SUBST(LDFLAGS,"$sdsl_ldflags $LDFLAGS")
+
+# Checks for header files.
+AC_LANG([C++])	#sets the auto conf to look for c++ headers
+
+# Check for OpenMP.
+AC_OPENMP
+if test -z $OPENMP_CXXFLAGS; then
+	OPENMP_CXXFLAGS=-Wno-unknown-pragmas
+fi
+
+# Checks for typedefs, structures, and compiler characteristics.
+
+AC_CONFIG_FILES([
+		Makefile
+		src/Makefile
+])
+AC_OUTPUT
+
