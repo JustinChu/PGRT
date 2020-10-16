@@ -23,15 +23,12 @@ AC_CHECK_LIB([dl], [dlopen])
 AC_TYPE_SIZE_T
 
 # Set compiler flags
-AC_SUBST(CXXFLAGS,"-std=c++11 $CXXFLAGS")
+AC_SUBST(CXXFLAGS,"-O3 -std=c++11 $CXXFLAGS")
 AC_SUBST(AM_CXXFLAGS, "-Wall -Wextra -Werror $AM_CXXFLAGS")
 
 # Find the absolute paths.
 srcdir=$(cd $srcdir; pwd)
 
-# Set compiler flags.
-#AC_SUBST(CPPFLAGS,"-I$srcdir $boost_cppflags $sparsehash_cppflags $sdsl_cppflags $CPPFLAGS")
-#AC_SUBST(LDFLAGS,"$sdsl_ldflags $LDFLAGS")
 
 # Checks for header files.
 AC_LANG([C++])	#sets the auto conf to look for c++ headers
@@ -40,6 +37,12 @@ AC_LANG([C++])	#sets the auto conf to look for c++ headers
 AC_OPENMP
 if test -z $OPENMP_CXXFLAGS; then
 	OPENMP_CXXFLAGS=-Wno-unknown-pragmas
+fi
+
+#check for bifrost
+AC_CHECK_HEADERS([bifrost/ColoredCDBG.hpp])
+if test $ac_cv_header_bifrost_ColoredCDBG_hpp != yes; then
+	AC_MSG_ERROR([Requires bifrost])
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.
