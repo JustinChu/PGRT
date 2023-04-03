@@ -10,6 +10,7 @@ using namespace std;
 
 namespace opt {
 extern int verbose;
+extern int k;
 }
 
 

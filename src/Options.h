@@ -17,5 +17,6 @@
  */
 namespace opt {
 int verbose = 0;
+int k = 31;
 }
 #endif

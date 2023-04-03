@@ -20,7 +20,7 @@
 
 using namespace std;
 
-#define PROGRAM "biobloommicategorizer"
+#define PROGRAM "pgrt"
 
 void printVersion()
 {
