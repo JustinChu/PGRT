@@ -39,12 +39,6 @@ if test -z $OPENMP_CXXFLAGS; then
 	OPENMP_CXXFLAGS=-Wno-unknown-pragmas
 fi
 
-#check for bifrost
-AC_CHECK_HEADERS([bifrost/ColoredCDBG.hpp])
-if test $ac_cv_header_bifrost_ColoredCDBG_hpp != yes; then
-	AC_MSG_ERROR([Requires bifrost])
-fi
-
 # Checks for typedefs, structures, and compiler characteristics.
 
 AC_CONFIG_FILES([

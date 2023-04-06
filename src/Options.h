@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <string>
 
+using namespace std;
+
 /**
  * Global variables that are mostly constant for the duration of the
  * execution of the program.
@@ -18,5 +20,7 @@
 namespace opt {
 int verbose = 0;
 int k = 31;
+string prefix = "";
+unsigned threads = 1;
 }
 #endif

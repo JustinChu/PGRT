@@ -1,14 +1,18 @@
-bin_PROGRAMS = pgrt-build
+bin_PROGRAMS = pgrt
 
-pgrt_build_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+pgrt_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
-pgrt_build_CPPFLAGS = -I$(top_srcdir)/src \
+pgrt_CPPFLAGS = -I$(top_srcdir)/src \
 	-I$(top_srcdir)/vendor \
 	-I$(top_srcdir)
-		
-pgrt_build_LDFLAGS = $(OPENMP_CXXFLAGS) \
-	-lz \
-	-lbifrost \
+
+pgrt_LDFLAGS = $(OPENMP_CXXFLAGS) \
 	-pthread
 
-pgrt_build_SOURCES = PanGenomeRefBuild.cpp
+pgrt_LDADD = -lz
+	
+pgrt_SOURCES = PanGenomeRefBuild.cpp \
+	SingleGenomeUnique.hpp \
+	Options.h \
+	Util.h
+	
