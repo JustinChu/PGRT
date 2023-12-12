@@ -11,6 +11,9 @@
 #include <stdint.h>
 #include <string>
 #include <limits>
+#include "khashutil.hpp"
+
+using namespace KHashUtil;
 
 class KseqHashIterator {
 public:
@@ -25,9 +28,9 @@ public:
 		init();
 	}
 
-	KseqHashIterator(const char *seq, uint64_t strLen, int k) :
+	KseqHashIterator(const char *seq, uint64_t strLen, int k, size_t startPos = 0) :
 			m_seq(seq), m_len(strLen), m_k(k), m_mask((1ULL << k * 2) - 1), m_shift(
-					(k - 1) * 2), m_pos(0) {
+					(k - 1) * 2), m_pos(startPos) {
 		init();
 		next();
 	}
@@ -59,6 +62,21 @@ public:
 
 	uint64_t getPos(){
 		return m_pos;
+	}
+
+	/*
+	 * FW = 1, RV = 0
+	 */
+	bool getDirection(){
+		return m_ntFW < m_ntRV;
+	}
+
+	uint64_t getFW(){
+		return m_ntFW;
+	}
+
+	uint64_t getRV(){
+		return m_ntRV;
 	}
 
 	~KseqHashIterator() {
@@ -109,33 +127,6 @@ private:
 		else{
 			m_pos = std::numeric_limits<uint64_t>::max();
 		}
-	}
-
-	const unsigned char s_seq_nt4_table[256] = { // translate ACGT to 0123
-			0, 1, 2, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-					4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-					4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-					4, 4, 0, 4, 1, 4, 4, 4, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-					4, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 4, 1, 4, 4, 4,
-					2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 4, 4, 4, 4, 4,
-					4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-					4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-					4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-					4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-					4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-					4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-					4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 };
-
-	inline uint64_t hash64(uint64_t key, uint64_t mask) // invertible integer hash function
-			{
-		key = (~key + (key << 21)) & mask; // key = (key << 21) - key - 1;
-		key = key ^ key >> 24;
-		key = ((key + (key << 3)) + (key << 8)) & mask; // key * 265
-		key = key ^ key >> 14;
-		key = ((key + (key << 2)) + (key << 4)) & mask; // key * 21
-		key = key ^ key >> 28;
-		key = (key + (key << 31)) & mask;
-		return key;
 	}
 };
 

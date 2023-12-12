@@ -22,5 +22,7 @@ int verbose = 0;
 int k = 31;
 string prefix = "";
 unsigned threads = 1;
+string bed = "";
+string ref = "";
 }
 #endif

@@ -39,7 +39,10 @@ void printHelpDialog()
 	const string dialog =
 	"Usage: pgrt-build [OPTION]... [FILES]...\n"
 	"The input is expected to be a set of FASTA files\n\n"
-	"  -t, --threads=INT      threads to use. [1]\n"
+	"  -b, --bed=STR          List of bed file to select specific regions.\n"
+	"  -r, --ref=STR          Starting fasta file construction using bed file.\n"
+	"                         Only considers k-mers found in these regions.\n"
+	"  -t, --threads=INT      Threads to use. [1]\n"
 	"  -p, --prefix=STR       Prefix of output files.\n"
 	"  -k, --kmer=INT         Size of k-mer used.[" + to_string(opt::k) + "]\n"
 	"  -h, --help             Display this dialog.\n"
@@ -62,6 +65,8 @@ int main(int argc, char *argv[])
 
 	//long form arguments
 	static struct option long_options[] = { {
+		"bed", required_argument, NULL, 'b' }, {
+		"ref", required_argument, NULL, 'r' }, {
 		"threads", required_argument, NULL, 't' }, {
 		"kmer", required_argument, NULL, 'k' }, {
 		"help", no_argument, NULL, 'h' }, {
@@ -70,13 +75,29 @@ int main(int argc, char *argv[])
 		NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "vhk:p:t:", long_options,
+	while ((c = getopt_long(argc, argv, "vhk:p:t:b:r:", long_options,
 			&option_index)) != -1)
 	{
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 		case 'h': {
 			printHelpDialog();
+			break;
+		}
+		case 'b': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::bed)) {
+				cerr << "Error - Invalid parameter b: " << optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'r': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::ref)) {
+				cerr << "Error - Invalid parameter r: " << optarg << endl;
+				return 0;
+			}
 			break;
 		}
 		case 't': {
@@ -135,14 +156,32 @@ int main(int argc, char *argv[])
 		cerr << "Error: Need Input File" << endl;
 		die = true;
 	}
-
 	if (die) {
 		cerr << "Try '--help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
 	double time = omp_get_wtime();
-	SingleGenomeUnique gu(inputFiles);
-	gu.printStats();
+	if(opt::ref.empty()){
+		SingleGenomeUnique gu(inputFiles);
+	}
+	else{
+		SingleGenomeUnique gu(inputFiles, opt::ref);
+	}
+	if (opt::verbose) {
+		cerr << "Finished unique k-mer acquisition, Time: " << omp_get_wtime() - time << " s Memory: "
+				<< Util::getRSS() << " kbytes" << endl;
+	}
+//	gu.createConnections();
+//	if (opt::verbose) {
+//		cerr << "Finished edge creation, Time: " << omp_get_wtime() - time << " s Memory: "
+//				<< Util::getRSS() << " kbytes" << endl;
+//	}
+//	gu.printEdgesGV();
+//	gu.genUnitigs();
+//	if (opt::verbose) {
+//		cerr << "Unitig creation, Time: " << omp_get_wtime() - time << " s Memory: "
+//				<< Util::getRSS() << " kbytes" << endl;
+//	}
 	cerr << "Time: " << omp_get_wtime() - time << " s Memory: " << Util::getRSS()
 			<< " kbytes" << endl;
 	return 0;
