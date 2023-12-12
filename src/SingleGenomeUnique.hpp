@@ -110,7 +110,7 @@ public:
 					if (m_kmers.find(itr->first) == m_kmers.end()) {
 						m_kmers[itr->first] = KmerInfo();
 					}
-					m_kmers[itr->first].incrementCount();
+//					m_kmers[itr->first].incrementCount();
 				}
 			}
 		} else {
@@ -170,7 +170,7 @@ public:
 					if (m_kmers.find(itr->first) == m_kmers.end()) {
 						m_kmers[itr->first] = KmerInfo();
 					}
-					m_kmers[itr->first].incrementCount();
+//					m_kmers[itr->first].incrementCount();
 				}
 			}
 		}
@@ -219,7 +219,7 @@ public:
 //		vector<uint64_t> mgCount(m_filenames.size(), 0);
 //
 //		//TODO use locks + buckets to optimize?
-//		for (MGKmerSet::const_iterator itr = m_kmers.begin();
+//		for (KMGmerSet::const_iterator itr = m_kmers.begin();
 //				itr != m_kmers.end(); ++itr) {
 //			unsigned sum = 0;
 //			for (unsigned i = 0; i < m_filenames.size(); ++i) {
@@ -417,6 +417,31 @@ public:
 //			itr->first
 //		}
 //	}
+
+	/*
+	 * Only complete unique k-mers
+	 */
+	void printSubKmers(){
+		if(opt::verbose){
+			cerr << "Printing Sub-kmers" << endl;
+		}
+		string tmp = "";
+
+		size_t kmerID = 0;
+		//iterate through k-mers
+		for (KmerSet::const_iterator itr = m_kmers.begin();
+				itr != m_kmers.end(); ++itr) {
+			if (itr->second.getCount() == m_filenames.size()) {
+				tmp.clear();
+				tmp += '>';
+				tmp += to_string(kmerID++);
+				tmp += "\n";
+				tmp += kmerToStr(itr->first);
+				tmp += "\n";
+				cout << tmp;
+			}
+		}
+	}
 
 	void genUnitigs(){
 		if(opt::verbose){

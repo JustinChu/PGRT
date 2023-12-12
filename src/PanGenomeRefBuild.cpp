@@ -166,6 +166,7 @@ int main(int argc, char *argv[])
 	}
 	else{
 		SingleGenomeUnique gu(inputFiles, opt::ref);
+		gu.printSubKmers();
 	}
 	if (opt::verbose) {
 		cerr << "Finished unique k-mer acquisition, Time: " << omp_get_wtime() - time << " s Memory: "
