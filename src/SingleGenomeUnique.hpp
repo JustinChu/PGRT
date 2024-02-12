@@ -425,6 +425,7 @@ public:
 		if(opt::verbose){
 			cerr << "Printing Sub-kmers" << endl;
 		}
+		ofstream out = ofstream(opt::prefix + "_kmers.fa");
 		string tmp = "";
 
 		size_t kmerID = 0;
@@ -438,9 +439,10 @@ public:
 				tmp += "\n";
 				tmp += kmerToStr(itr->first);
 				tmp += "\n";
-				cout << tmp;
+				out << tmp;
 			}
 		}
+		out.close();
 	}
 
 	void genUnitigs(){

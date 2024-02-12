@@ -45,6 +45,7 @@ void printHelpDialog()
 	"  -t, --threads=INT      Threads to use. [1]\n"
 	"  -p, --prefix=STR       Prefix of output files.\n"
 	"  -k, --kmer=INT         Size of k-mer used.[" + to_string(opt::k) + "]\n"
+	"  -g, --graph            Output GFA file.\n"
 	"  -h, --help             Display this dialog.\n"
 	"  -v, --verbose          Display verbose output.\n"
 	"      --version          Print version information.\n"
@@ -69,13 +70,14 @@ int main(int argc, char *argv[])
 		"ref", required_argument, NULL, 'r' }, {
 		"threads", required_argument, NULL, 't' }, {
 		"kmer", required_argument, NULL, 'k' }, {
+		"graph", required_argument, NULL, 'g' }, {
 		"help", no_argument, NULL, 'h' }, {
 		"version", no_argument, &OPT_VERSION, 1 }, {
 		"verbose", no_argument, NULL, 'v' }, {
 		NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "vhk:p:t:b:r:", long_options,
+	while ((c = getopt_long(argc, argv, "vhk:p:t:b:r:g", long_options,
 			&option_index)) != -1)
 	{
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -124,6 +126,10 @@ int main(int argc, char *argv[])
 			}
 			break;
 		}
+		case 'g': {
+			opt::graph = true;
+			break;
+		}
 		case 'v': {
 			opt::verbose++;
 			break;
@@ -163,6 +169,7 @@ int main(int argc, char *argv[])
 	double time = omp_get_wtime();
 	if(opt::ref.empty()){
 		SingleGenomeUnique gu(inputFiles);
+		gu.printSubKmers();
 	}
 	else{
 		SingleGenomeUnique gu(inputFiles, opt::ref);
@@ -172,17 +179,19 @@ int main(int argc, char *argv[])
 		cerr << "Finished unique k-mer acquisition, Time: " << omp_get_wtime() - time << " s Memory: "
 				<< Util::getRSS() << " kbytes" << endl;
 	}
-//	gu.createConnections();
-//	if (opt::verbose) {
-//		cerr << "Finished edge creation, Time: " << omp_get_wtime() - time << " s Memory: "
-//				<< Util::getRSS() << " kbytes" << endl;
-//	}
-//	gu.printEdgesGV();
-//	gu.genUnitigs();
-//	if (opt::verbose) {
-//		cerr << "Unitig creation, Time: " << omp_get_wtime() - time << " s Memory: "
-//				<< Util::getRSS() << " kbytes" << endl;
-//	}
+	if(opt::graph){
+//		gu.createConnections();
+//		if (opt::verbose) {
+//			cerr << "Finished edge creation, Time: " << omp_get_wtime() - time
+//					<< " s Memory: " << Util::getRSS() << " kbytes" << endl;
+//		}
+//		gu.printEdgesGV();
+//		gu.genUnitigs();
+//		if (opt::verbose) {
+//			cerr << "Unitig creation, Time: " << omp_get_wtime() - time
+//					<< " s Memory: " << Util::getRSS() << " kbytes" << endl;
+//		}
+	}
 	cerr << "Time: " << omp_get_wtime() - time << " s Memory: " << Util::getRSS()
 			<< " kbytes" << endl;
 	return 0;
