@@ -37,7 +37,7 @@ void printHelpDialog() {
 			"                         [required]\n"
 			"  -g, --gsize = INT      Genome size for error rate\n"
 			"                         estimation. ["+ to_string(opt::genomeSize)+"]\n"
-			"  -k, --kmer = INT       k-mer size used. [19]\n"
+			"  -k, --kmer = INT       k-mer size used. ["+ to_string(opt::k)+"]\n"
 			"  -h, --help             Display this dialog.\n"
 			"  -v, --verbose          Display verbose output.\n"
 			"      --version          Print version information.\n";
