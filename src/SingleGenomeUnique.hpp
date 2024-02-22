@@ -254,7 +254,7 @@ public:
 		if(opt::verbose){
 			cerr << "Printing Sub-kmers" << endl;
 		}
-		ofstream out = ofstream(opt::prefix + "_kmers.fa");
+		ofstream out(opt::prefix + "_kmers.fa");
 		string tmp = "";
 
 		size_t kmerID = 0;
