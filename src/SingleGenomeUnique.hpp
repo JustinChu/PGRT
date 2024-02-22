@@ -37,178 +37,7 @@ class SingleGenomeUnique {
 public:
 	SingleGenomeUnique(const vector<string> &filenames) : m_mask(KHashUtil::getMask(opt::k)),
 			m_kmers(), m_filenames(filenames), m_unitigs(), m_shift(((opt::k) - 1) * 2) {
-#pragma omp parallel for
-		for (unsigned i = 0; i < filenames.size(); ++i) {
-			gzFile fp;
-			fp = gzopen(filenames[i].c_str(), "r");
-			if (fp == Z_NULL) {
-#pragma omp critical(cerr)
-				std::cerr << "file " << filenames[i] << " cannot be opened"
-						<< std::endl;
-				exit(1);
-			} else if (opt::verbose) {
-#pragma omp critical(cerr)
-				std::cerr << "Opening " << filenames[i] << std::endl;
-			}
-			//create temp file to count uniqueMGKmerSet
-			SGKmerSet tmp;
-
-			//read in seq
-			kseq_t *seq = kseq_init(fp);
-			int l = kseq_read(seq);
-			while (l >= 0) {
-				insertRead(*seq, tmp);
-				l = kseq_read(seq);
-			}
-			kseq_destroy(seq);
-			gzclose(fp);
-			for (SGKmerSet::const_iterator itr = tmp.begin(); itr != tmp.end();
-					++itr) {
-				if (itr->second == 0) {
-					//TODO use locks + buckets to optimize?
-#pragma omp critical(m_kmers)
-					{
-						if (m_kmers.find(itr->first) == m_kmers.end()) {
-							m_kmers[itr->first] = KmerInfo();
-						}
-					}
-					m_kmers[itr->first].incrementCount();
-				}
-			}
-		}
-	}
-
-	/*
-	 * Uses only k-mers in the reference provided
-	 */
-	SingleGenomeUnique(const vector<string> &filenames, const string &ref) :
-			m_mask(KHashUtil::getMask(opt::k)), m_kmers(), m_filenames(
-					filenames), m_unitigs(), m_shift(((opt::k) - 1) * 2) {
-		//k-merize
-		gzFile refFH;
-		refFH = gzopen(ref.c_str(), "r");
-		if (refFH == Z_NULL) {
-			std::cerr << "file " << ref << " cannot be opened" << endl;
-			exit(1);
-		} else if (opt::verbose) {
-			std::cerr << "Opening " << ref << endl;
-		}
-		kseq_t *seq = kseq_init(refFH);
-
-		if (opt::bed.empty()) {
-			//create temp file to count uniqueMGKmerSet
-			SGKmerSet tmp;
-			//read in seq
-			int l = kseq_read(seq);
-			while (l >= 0) {
-				insertRead(*seq, tmp);
-				l = kseq_read(seq);
-			}
-			for (SGKmerSet::const_iterator itr = tmp.begin(); itr != tmp.end();
-					++itr) {
-				if (itr->second == 0) {
-					if (m_kmers.find(itr->first) == m_kmers.end()) {
-						m_kmers[itr->first] = KmerInfo();
-					}
-//					m_kmers[itr->first].incrementCount();
-				}
-			}
-		} else {
-			tsl::robin_map<string, unsigned> chrs;
-			vector<unique_ptr<vector<pair<uint64_t, uint64_t>>>> intervals;
-
-			//load in bed file
-			ifstream fh(opt::bed.c_str());
-			{
-				if (!fh.good()) {
-					std::cerr << "file " << opt::bed.c_str() << " cannot be opened" << endl;
-					exit(1);
-				} else if (opt::verbose) {
-					std::cerr << "Opening " << opt::bed.c_str() << endl;
-				}
-				string line;
-				while (getline(fh, line)) {
-					std::stringstream ss(line);
-					string chr;
-					ss >> chr;
-					uint64_t start, end;
-					ss >> start;
-					ss >> end;
-					if (chrs.find(chr) == chrs.end()) {
-						chrs[chr] = intervals.size();
-						intervals.emplace_back(
-								unique_ptr<vector<pair<uint64_t, uint64_t>>>(
-										new vector<pair<uint64_t, uint64_t>>));
-					}
-					intervals[chrs.at(chr)]->push_back(
-							std::make_pair(start, end));
-				}
-			}
-
-			//create temp file to count uniqueMGKmerSet
-			SGKmerSet tmp;
-			//read in seq
-			int l = kseq_read(seq);
-			while (l >= 0) {
-				const string &chrName = string(seq->name.s, seq->name.l);
-				if (chrs.find(chrName) != chrs.end()) {
-					if (opt::verbose) {
-						std::cerr << "Processing: " << chrName << endl;
-					}
-					const vector<pair<uint64_t, uint64_t>> &startEnds =
-							*(intervals[chrs.at(chrName)]);
-					for (size_t i = 0; i < startEnds.size(); ++i) {
-						insertRead(*seq, tmp, startEnds.at(i).first,
-								startEnds.at(i).second);
-					}
-				}
-				l = kseq_read(seq);
-			}
-			for (SGKmerSet::const_iterator itr = tmp.begin(); itr != tmp.end();
-					++itr) {
-				if (itr->second == 0) {
-					if (m_kmers.find(itr->first) == m_kmers.end()) {
-						m_kmers[itr->first] = KmerInfo();
-					}
-//					m_kmers[itr->first].incrementCount();
-				}
-			}
-		}
-		kseq_destroy(seq);
-		gzclose(refFH);
-
-#pragma omp parallel for
-		for (unsigned i = 0; i < filenames.size(); ++i) {
-			gzFile fp;
-			fp = gzopen(filenames[i].c_str(), "r");
-			if (fp == Z_NULL) {
-#pragma omp critical(cerr)
-				std::cerr << "file " << filenames[i] << " cannot be opened"
-						<< std::endl;
-				exit(1);
-			} else if (opt::verbose) {
-#pragma omp critical(cerr)
-				std::cerr << "Opening " << filenames[i] << std::endl;
-			}
-			//create temp file to count uniqueMGKmerSet
-			SGKmerSet tmp;
-
-			//read in seq
-			kseq_t *seq = kseq_init(fp);
-			int l = kseq_read(seq);
-			while (l >= 0) {
-				insertReadExistOnly(*seq, tmp);
-				l = kseq_read(seq);
-			}
-			kseq_destroy(seq);
-			gzclose(fp);
-			for (SGKmerSet::const_iterator itr = tmp.begin(); itr != tmp.end();
-					++itr) {
-				if (itr->second == 0) {
-					m_kmers[itr->first].incrementCount();
-				}
-			}
-		}
+		init();
 	}
 
 //	/*
@@ -445,24 +274,43 @@ public:
 		out.close();
 	}
 
-	void genUnitigs(){
-		if(opt::verbose){
-			cerr << "Generating Unitigs" << endl;
-		}
-		unsigned unitigID = 0;
-		//iterate through k-mers
-		for (KmerSet::const_iterator itr = m_kmers.begin();
-				itr != m_kmers.end(); ++itr) {
-			//find blunted edge (not including long edges)
-			if (!itr->second.isTraversed() && itr->second.isBlunt()) {
-				uint64_t endKmer = extend(itr->first);
-				//TODO output unitig
-				m_unitigs[itr->first] = unitigID;
-				m_unitigs[endKmer] = unitigID;
-				unitigID++;
-			}
-		}
-	}
+//	void genUnitigs(){
+//		if(opt::verbose){
+//			cerr << "Generating Unitigs" << endl;
+//		}
+//		unsigned unitigID = 0;
+//		//iterate through k-mers
+//		for (KmerSet::const_iterator itr = m_kmers.begin();
+//				itr != m_kmers.end(); ++itr) {
+//			//find blunted edge (not including long edges)
+//			if (!itr->second.isTraversed() && itr->second.isBlunt()) {
+//				uint64_t endKmer = extend(itr->first);
+//				//TODO output unitig
+//				m_unitigs[itr->first] = unitigID;
+//				m_unitigs[endKmer] = unitigID;
+//				unitigID++;
+//			}
+//		}
+//	}
+
+//	void genUnitigs(){
+//		if(opt::verbose){
+//			cerr << "Generating Unitigs" << endl;
+//		}
+//		unsigned unitigID = 0;
+//		//iterate through k-mers
+//		for (KmerSet::const_iterator itr = m_kmers.begin();
+//				itr != m_kmers.end(); ++itr) {
+//			//find blunted edge (not including long edges)
+//			if (!itr->second.isTraversed() && itr->second.isBlunt()) {
+//				uint64_t endKmer = extend(itr->first);
+//				//TODO output unitig
+//				m_unitigs[itr->first] = unitigID;
+//				m_unitigs[endKmer] = unitigID;
+//				unitigID++;
+//			}
+//		}
+//	}
 
 //	void printUnitigStats(){
 //		for(auto itr = m_lEdges.begin(); itr != m_lEdges.end(); ++itr){
@@ -540,6 +388,176 @@ private:
 
 	unsigned m_multiOutEdgeCount;
 
+	void init() {
+		if (opt::ref.empty()) {
+#pragma omp parallel for
+			for (unsigned i = 0; i < m_filenames.size(); ++i) {
+				gzFile fp;
+				fp = gzopen(m_filenames[i].c_str(), "r");
+				if (fp == Z_NULL) {
+#pragma omp critical(cerr)
+					std::cerr << "file " << m_filenames[i] << " cannot be opened"
+							<< std::endl;
+					exit(1);
+				} else if (opt::verbose) {
+#pragma omp critical(cerr)
+					std::cerr << "Opening " << m_filenames[i] << std::endl;
+				}
+				//create temp file to count uniqueMGKmerSet
+				SGKmerSet tmp;
+
+				//read in seq
+				kseq_t *seq = kseq_init(fp);
+				int l = kseq_read(seq);
+				while (l >= 0) {
+					insertRead(*seq, tmp);
+					l = kseq_read(seq);
+				}
+				kseq_destroy(seq);
+				gzclose(fp);
+				for (SGKmerSet::const_iterator itr = tmp.begin();
+						itr != tmp.end(); ++itr) {
+					if (itr->second == 0) {
+						//TODO use locks + buckets to optimize?
+#pragma omp critical(m_kmers)
+						{
+							if (m_kmers.find(itr->first) == m_kmers.end()) {
+								m_kmers[itr->first] = KmerInfo();
+							}
+						}
+						m_kmers[itr->first].incrementCount();
+					}
+				}
+			}
+		} else {
+			//k-merize
+			gzFile refFH;
+			refFH = gzopen(opt::ref.c_str(), "r");
+			if (refFH == Z_NULL) {
+				std::cerr << "file " << opt::ref << " cannot be opened" << endl;
+				exit(1);
+			} else if (opt::verbose) {
+				std::cerr << "Opening " << opt::ref << endl;
+			}
+			kseq_t *seq = kseq_init(refFH);
+
+			if (opt::bed.empty()) {
+				//create temp file to count uniqueMGKmerSet
+				SGKmerSet tmp;
+				//read in seq
+				int l = kseq_read(seq);
+				while (l >= 0) {
+					insertRead(*seq, tmp);
+					l = kseq_read(seq);
+				}
+				for (SGKmerSet::const_iterator itr = tmp.begin();
+						itr != tmp.end(); ++itr) {
+					if (itr->second == 0) {
+						if (m_kmers.find(itr->first) == m_kmers.end()) {
+							m_kmers[itr->first] = KmerInfo();
+						}
+					}
+				}
+			} else {
+				tsl::robin_map<string, unsigned> chrs;
+				vector<unique_ptr<vector<pair<uint64_t, uint64_t>>>> intervals;
+
+				//load in bed file
+				ifstream fh(opt::bed.c_str());
+				{
+					if (!fh.good()) {
+						std::cerr << "file " << opt::bed.c_str()
+								<< " cannot be opened" << endl;
+						exit(1);
+					} else if (opt::verbose) {
+						std::cerr << "Opening " << opt::bed.c_str() << endl;
+					}
+					string line;
+					while (getline(fh, line)) {
+						std::stringstream ss(line);
+						string chr;
+						ss >> chr;
+						uint64_t start, end;
+						ss >> start;
+						ss >> end;
+						if (chrs.find(chr) == chrs.end()) {
+							chrs[chr] = intervals.size();
+							intervals.emplace_back(
+									unique_ptr<vector<pair<uint64_t, uint64_t>>>(
+											new vector<pair<uint64_t, uint64_t>>));
+						}
+						intervals[chrs.at(chr)]->push_back(
+								std::make_pair(start, end));
+					}
+				}
+
+				//create temp file to count uniqueMGKmerSet
+				SGKmerSet tmp;
+				//read in seq
+				int l = kseq_read(seq);
+				while (l >= 0) {
+					const string &chrName = string(seq->name.s, seq->name.l);
+					if (chrs.find(chrName) != chrs.end()) {
+						if (opt::verbose) {
+							std::cerr << "Processing: " << chrName << endl;
+						}
+						const vector<pair<uint64_t, uint64_t>> &startEnds =
+								*(intervals[chrs.at(chrName)]);
+						for (size_t i = 0; i < startEnds.size(); ++i) {
+							insertRead(*seq, tmp, startEnds.at(i).first,
+									startEnds.at(i).second);
+						}
+					}
+					l = kseq_read(seq);
+				}
+				for (SGKmerSet::const_iterator itr = tmp.begin();
+						itr != tmp.end(); ++itr) {
+					if (itr->second == 0) {
+						if (m_kmers.find(itr->first) == m_kmers.end()) {
+							m_kmers[itr->first] = KmerInfo();
+						}
+						//					m_kmers[itr->first].incrementCount();
+					}
+				}
+			}
+			kseq_destroy(seq);
+			gzclose(refFH);
+
+#pragma omp parallel for
+			for (unsigned i = 0; i < m_filenames.size(); ++i) {
+				gzFile fp;
+				fp = gzopen(m_filenames[i].c_str(), "r");
+				if (fp == Z_NULL) {
+#pragma omp critical(cerr)
+					std::cerr << "file " << m_filenames[i] << " cannot be opened"
+							<< std::endl;
+					exit(1);
+				} else if (opt::verbose) {
+#pragma omp critical(cerr)
+					std::cerr << "Opening " << m_filenames[i] << std::endl;
+				}
+				//create temp file to count uniqueMGKmerSet
+				SGKmerSet tmp;
+
+				//read in seq
+				kseq_t *seq = kseq_init(fp);
+				int l = kseq_read(seq);
+				while (l >= 0) {
+					insertReadExistOnly(*seq, tmp);
+					l = kseq_read(seq);
+				}
+				kseq_destroy(seq);
+				gzclose(fp);
+				for (SGKmerSet::const_iterator itr = tmp.begin();
+						itr != tmp.end(); ++itr) {
+					if (itr->second == 0) {
+						m_kmers[itr->first].incrementCount();
+					}
+				}
+			}
+		}
+	}
+
 	/*
 	 * Extends the k-mers given a incorporation base
 	 * k-mers are unhashed, base is in numerical form (0123 <-> ACGT)
@@ -550,6 +568,18 @@ private:
 		rv = rv >> 2 | (uint64_t) (3 - base) << m_shift;
 		return KHashUtil::hash64(fw < rv ? fw : rv, m_mask);
 	}
+
+//	/*
+//	 * Tries all possible base extensions and returns if blunted
+//	 */
+//	bool isBlunt(uint64_t kmer) {
+//		for(unsigned i = 0; i < 4; ++i ){
+//
+//		}
+//		uint64_t fw = (fw << 2 | base) & m_mask;
+//		uint64_t rv = rv >> 2 | (uint64_t) (3 - base) << m_shift;
+//		return KHashUtil::hash64(fw < rv ? fw : rv, m_mask);
+//	}
 
 	/*
 	 * TODO: actually create unitig

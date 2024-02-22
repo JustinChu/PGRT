@@ -167,31 +167,25 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	double time = omp_get_wtime();
-	if(opt::ref.empty()){
-		SingleGenomeUnique gu(inputFiles);
-		gu.printSubKmers();
-	}
-	else{
-		SingleGenomeUnique gu(inputFiles, opt::ref);
-		gu.printSubKmers();
-	}
+	SingleGenomeUnique gu(inputFiles);
 	if (opt::verbose) {
 		cerr << "Finished unique k-mer acquisition, Time: " << omp_get_wtime() - time << " s Memory: "
 				<< Util::getRSS() << " kbytes" << endl;
 	}
-	if(opt::graph){
+	gu.printSubKmers();
+//	if(opt::graph){
+//		gu.genUnitigs();
 //		gu.createConnections();
 //		if (opt::verbose) {
 //			cerr << "Finished edge creation, Time: " << omp_get_wtime() - time
 //					<< " s Memory: " << Util::getRSS() << " kbytes" << endl;
 //		}
 //		gu.printEdgesGV();
-//		gu.genUnitigs();
 //		if (opt::verbose) {
 //			cerr << "Unitig creation, Time: " << omp_get_wtime() - time
 //					<< " s Memory: " << Util::getRSS() << " kbytes" << endl;
 //		}
-	}
+//	}
 	cerr << "Time: " << omp_get_wtime() - time << " s Memory: " << Util::getRSS()
 			<< " kbytes" << endl;
 	return 0;

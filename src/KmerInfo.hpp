@@ -116,15 +116,15 @@ public:
 		return (m_count);
 	}
 
-	/*
-	 * A blunted edge is defined as not having edges on right or left
-	 * 00001111 & val == 0
-	 * 11110000 & val == 0
-	 */
-	bool isBlunt() const {
-//		cout << toBitset() << endl;
-		return ((m_val & s_fwEdges) == 0) | ((m_val & s_rvEdges) == 0);
-	}
+//	/*
+//	 * A blunted edge is defined as not having edges on right or left
+//	 * 00001111 & val == 0
+//	 * 11110000 & val == 0
+//	 */
+//	bool isBlunt() const {
+////		cout << toBitset() << endl;
+//		return ((m_val & s_fwEdges) == 0) | ((m_val & s_rvEdges) == 0);
+//	}
 
 	void setTraversed() {
 #pragma omp atomic
