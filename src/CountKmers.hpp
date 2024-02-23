@@ -31,9 +31,15 @@ using namespace std;
 
 class CountKmers {
 public:
-	CountKmers(const string &kmerFile): m_totalCounts(0), m_matchCounts(0){
+	CountKmers(const string &kmerFile) :
+			m_totalCounts(0), m_matchCounts(0) {
 		// TODO Auto-generated constructor stub
 		initCountsHash(kmerFile);
+		if (m_kmers.size() == 0) {
+			cerr << "No k-mers of k" << opt::k << " found in " << kmerFile
+					<< endl;
+			exit(1);
+		}
 	}
 
 	void computeCounts(const vector<string> &filenames) {
@@ -221,8 +227,8 @@ public:
 	}
 
 	void printInfo() {
-		cout << "Error Rate:" << computeErrorRate(m_totalCounts, m_kmerCounts.size(), m_matchCounts);
-		cout << "Coverage:" << (m_matchCounts/m_kmerCounts.size());
+		cout << "Error Rate:" << computeErrorRate(m_totalCounts, m_kmers.size(), m_matchCounts) << endl;
+		cout << "Coverage:" << (double(m_matchCounts)/double(m_kmers.size())) << endl;
 	}
 
 	~CountKmers() {
@@ -230,7 +236,7 @@ public:
 	}
 
 private:
-	tsl::robin_set<uint64_t> m_kmerCounts;
+	tsl::robin_set<uint64_t> m_kmers;
 	uint64_t m_totalCounts;
 	uint64_t m_matchCounts;
 
@@ -258,8 +264,7 @@ private:
 			for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
 					itr != itr.end(); ++itr) {
 				uint64_t hv = *itr;
-				//check for duplicates
-				m_kmerCounts.insert(hv);
+				m_kmers.insert(hv);
 			}
 			l = kseq_read(seq);
 			entryNum++;
@@ -271,7 +276,7 @@ private:
 	void incrementCount(kseq_t *seq) {
 		for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k); itr != itr.end();
 				++itr) {
-			if (m_kmerCounts.find(*itr) != m_kmerCounts.end()) {
+			if (m_kmers.find(*itr) != m_kmers.end()) {
 #pragma omp atomic update
 				++m_matchCounts;
 			}
