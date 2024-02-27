@@ -43,33 +43,87 @@ public:
 	}
 
 	void computeCounts(const vector<string> &filenames) {
+		if (filenames.size() < opt::threads) {
+			computeCountsProducerConsumer(filenames);
+		} else {
 #pragma omp parallel for
-		for (unsigned i = 0; i < filenames.size(); ++i) {
-			gzFile fp;
-			fp = gzopen(filenames[i].c_str(), "r");
-			if (fp == Z_NULL) {
+			for (unsigned i = 0; i < filenames.size(); ++i) {
+				gzFile fp;
+				fp = gzopen(filenames[i].c_str(), "r");
+				if (fp == Z_NULL) {
 #pragma omp critical (stderr)
-				{
-					std::cerr << "file " << filenames[i] << " cannot be opened"
-							<< std::endl;
-				}
-				exit(1);
-			} else if (opt::verbose) {
+					{
+						std::cerr << "file " << filenames[i]
+								<< " cannot be opened" << std::endl;
+					}
+					exit(1);
+				} else if (opt::verbose) {
 #pragma omp critical (stderr)
-				{
-					std::cerr << "Opening " << filenames[i] << std::endl;
+					{
+						std::cerr << "Opening " << filenames[i] << std::endl;
+					}
 				}
+				//read in seq
+				kseq_t *seq = kseq_init(fp);
+				int l = kseq_read(seq);
+				while (l >= 0) {
+					incrementCount(seq);
+					l = kseq_read(seq);
+				}
+				kseq_destroy(seq);
+				gzclose(fp);
 			}
-			//read in seq
-			kseq_t *seq = kseq_init(fp);
-			int l = kseq_read(seq);
-			while (l >= 0) {
-				incrementCount(seq);
-				l = kseq_read(seq);
-			}
-			kseq_destroy(seq);
-			gzclose(fp);
 		}
+	}
+
+	void printInfo() {
+		cout << "Total k-mer Counts: " << m_totalCounts << endl;
+		cout << "K-mers Matching Counts: " << m_matchCounts << endl;
+		cout << "K-mers in initial set: " << m_kmers.size() << endl;
+		cout << "Error Rate:" << computeErrorRate(m_totalCounts, m_kmers.size(), m_matchCounts) << endl;
+		cout << "Coverage:" << (double(m_matchCounts)/double(m_kmers.size())) << endl;
+	}
+
+	~CountKmers() {
+		// TODO Auto-generated destructor stub
+	}
+
+private:
+	tsl::robin_set<uint64_t> m_kmers;
+	uint64_t m_totalCounts;
+	uint64_t m_matchCounts;
+
+	void initCountsHash(const string &kmerFile){
+		gzFile fp = gzopen(kmerFile.c_str(), "r");
+		tsl::robin_set<uint64_t> dupes;
+		if (fp == Z_NULL) {
+#pragma omp critical (stderr)
+			{
+				std::cerr << "file " << kmerFile.c_str() << " cannot be opened"
+						<< std::endl;
+			}
+			exit(1);
+		} else if (opt::verbose) {
+#pragma omp critical (stderr)
+			{
+				std::cerr << "Opening " << kmerFile.c_str() << std::endl;
+			}
+		}
+		kseq_t *seq = kseq_init(fp);
+		int l = kseq_read(seq);
+		size_t entryNum = 0;
+		while (l >= 0) {
+			//k-merize and insert
+			for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
+					itr != itr.end(); ++itr) {
+				uint64_t hv = *itr;
+				m_kmers.insert(hv);
+			}
+			l = kseq_read(seq);
+			entryNum++;
+		}
+		kseq_destroy(seq);
+		gzclose(fp);
 	}
 
 	//use only if threads > number of files
@@ -224,56 +278,6 @@ public:
 				}
 			}
 		}
-	}
-
-	void printInfo() {
-		cout << "Total k-mer Counts: " << m_totalCounts << endl;
-		cout << "K-mers Matching Counts: " << m_matchCounts << endl;
-		cout << "K-mers in initial set: " << m_kmers.size() << endl;
-		cout << "Error Rate:" << computeErrorRate(m_totalCounts, m_kmers.size(), m_matchCounts) << endl;
-		cout << "Coverage:" << (double(m_matchCounts)/double(m_kmers.size())) << endl;
-	}
-
-	~CountKmers() {
-		// TODO Auto-generated destructor stub
-	}
-
-private:
-	tsl::robin_set<uint64_t> m_kmers;
-	uint64_t m_totalCounts;
-	uint64_t m_matchCounts;
-
-	void initCountsHash(const string &kmerFile){
-		gzFile fp = gzopen(kmerFile.c_str(), "r");
-		tsl::robin_set<uint64_t> dupes;
-		if (fp == Z_NULL) {
-#pragma omp critical (stderr)
-			{
-				std::cerr << "file " << kmerFile.c_str() << " cannot be opened"
-						<< std::endl;
-			}
-			exit(1);
-		} else if (opt::verbose) {
-#pragma omp critical (stderr)
-			{
-				std::cerr << "Opening " << kmerFile.c_str() << std::endl;
-			}
-		}
-		kseq_t *seq = kseq_init(fp);
-		int l = kseq_read(seq);
-		size_t entryNum = 0;
-		while (l >= 0) {
-			//k-merize and insert
-			for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
-					itr != itr.end(); ++itr) {
-				uint64_t hv = *itr;
-				m_kmers.insert(hv);
-			}
-			l = kseq_read(seq);
-			entryNum++;
-		}
-		kseq_destroy(seq);
-		gzclose(fp);
 	}
 
 	void incrementCount(kseq_t *seq) {

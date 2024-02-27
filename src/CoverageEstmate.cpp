@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
 	//output counts, error rate and coverage, genome size
 
 	CountKmers counter(opt::sites);
-	counter.computeCountsProducerConsumer(inputFiles);
+	counter.computeCounts(inputFiles);
 	counter.printInfo();
 	cerr << "Time: " << omp_get_wtime() - time << " s Memory: " << Util::getRSS()
 			<< " kbytes" << endl;
