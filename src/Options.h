@@ -25,7 +25,7 @@ unsigned threads = 1;
 string bed = "";
 string ref = "";
 bool graph = false;
-size_t genomeSize = 30000000000;
+size_t genomeSize;
 string sites = "";
 }
 #endif

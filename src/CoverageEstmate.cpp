@@ -36,7 +36,7 @@ void printHelpDialog() {
 			"  -s, --sites = STR      Fasta of sites to k-merize.\n"
 			"                         [required]\n"
 			"  -g, --gsize = INT      Genome size for error rate\n"
-			"                         estimation. ["+ to_string(opt::genomeSize)+"]\n"
+			"                         estimation. [required]\n"
 			"  -k, --kmer = INT       k-mer size used. ["+ to_string(opt::k)+"]\n"
 			"  -h, --help             Display this dialog.\n"
 			"  -v, --verbose          Display verbose output.\n"
@@ -58,13 +58,14 @@ int main(int argc, char *argv[]) {
 	static struct option long_options[] = {
 			{ "sites", required_argument, NULL, 's' },
 			{ "kmer", required_argument, NULL, 'k' },
+			{ "gsize", required_argument, NULL, 'g' },
 			{ "help", no_argument, NULL, 'h' },
 			{ "version", no_argument,&OPT_VERSION, 1 },
 			{ "verbose", no_argument, NULL, 'v' },
 			{NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "s:t:vhk:", long_options,
+	while ((c = getopt_long(argc, argv, "s:t:vhk:g:", long_options,
 			&option_index)) != -1) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
@@ -84,6 +85,14 @@ int main(int argc, char *argv[]) {
 			stringstream convert(optarg);
 			if (!(convert >> opt::k)) {
 				cerr << "Error - Invalid parameter k: " << optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'g': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::genomeSize)) {
+				cerr << "Error - Invalid parameter g: " << optarg << endl;
 				return 0;
 			}
 			break;
@@ -133,6 +142,10 @@ int main(int argc, char *argv[]) {
 		cerr << "Error: Need Input File" << endl;
 		die = true;
 	}
+	if (opt::genomeSize == 0) {
+		cerr << "Error: Genome Size (g) parameter needed" << endl;
+		die = true;
+	}
 
 	if (die) {
 		cerr << "Try '--help' for more information.\n";
@@ -144,6 +157,7 @@ int main(int argc, char *argv[]) {
 	//read in fasta
 	//count files
 	//output counts, error rate and coverage, genome size
+
 
 	CountKmers counter(opt::sites);
 	counter.computeCounts(inputFiles);
