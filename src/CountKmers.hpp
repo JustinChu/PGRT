@@ -227,6 +227,9 @@ public:
 	}
 
 	void printInfo() {
+		cout << "Total k-mer Counts: " << m_totalCounts << endl;
+		cout << "K-mers Matching Counts: " << m_matchCounts << endl;
+		cout << "K-mers in initial set: " << m_kmers.size() << endl;
 		cout << "Error Rate:" << computeErrorRate(m_totalCounts, m_kmers.size(), m_matchCounts) << endl;
 		cout << "Coverage:" << (double(m_matchCounts)/double(m_kmers.size())) << endl;
 	}
