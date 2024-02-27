@@ -77,6 +77,7 @@ public:
 	}
 
 	void printInfo() {
+		cout << "Genome Size Specificed: " << opt::genomeSize << endl;
 		cout << "Total k-mer Counts: " << m_totalCounts << endl;
 		cout << "K-mers Matching Counts: " << m_matchCounts << endl;
 		cout << "K-mers in initial set: " << m_kmers.size() << endl;
