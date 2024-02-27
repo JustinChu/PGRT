@@ -79,8 +79,8 @@ public:
 	void printInfo() {
 		cout << "Genome Size Specified: " << opt::genomeSize << endl;
 		cout << "Total k-mer Counts: " << m_totalCounts << endl;
-		cout << "K-mers Matching Counts: " << m_matchCounts << endl;
-		cout << "K-mers in initial set: " << m_kmers.size() << endl;
+		cout << "Matching k-mers Counts: " << m_matchCounts << endl;
+		cout << "Distinct k-mers: " << m_kmers.size() << endl;
 		cout << "Error Rate:" << computeErrorRate(m_totalCounts, m_kmers.size(), m_matchCounts) << endl;
 		cout << "Coverage:" << (double(m_matchCounts)/double(m_kmers.size())) << endl;
 	}
